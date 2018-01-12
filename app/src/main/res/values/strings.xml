@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Baking</string>
+    <string name="title_recipe_detail">Recipe Detail</string>
+    <string name="data_fetch_failed">Data fetch failed, no recipe loaded.</string>
+    <string name="ingredients">Ingredients</string>
+</resources>
