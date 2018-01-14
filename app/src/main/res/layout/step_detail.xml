@@ -1,24 +1,42 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <LinearLayout
+    <FrameLayout
+        android:id="@+id/media_frame"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_weight="2">
 
         <com.google.android.exoplayer2.ui.SimpleExoPlayerView
             android:id="@+id/player"
             android:layout_width="match_parent"
-            android:layout_height="200dp"/>
+            android:layout_height="@dimen/player_height"
+            android:visibility="gone"
+            app:show_timeout="3000"
+            app:hide_on_touch="true"
+            app:resize_mode="fit"
+            android:layout_margin="@dimen/cardview_margin"
+            android:background="@android:color/black"
+            xmlns:app="http://schemas.android.com/apk/res-auto"/>
 
-        <TextView xmlns:tools="http://schemas.android.com/tools"
-            android:id="@+id/step_detail"
-            style="?android:attr/textAppearanceLarge"
+        <ImageView
+            android:id="@+id/thumbnail"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="16dp"
-            android:textIsSelectable="true"
-            tools:context="com.duccipopi.baking.activities.StepFragment" />
-    </LinearLayout>
-</ScrollView>
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <TextView xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/step_detail"
+        style="?android:attr/textAppearanceLarge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/default_margin"
+        android:textIsSelectable="true"
+        android:layout_weight="1"
+        tools:context="com.duccipopi.baking.activities.StepFragment" />
+</LinearLayout>

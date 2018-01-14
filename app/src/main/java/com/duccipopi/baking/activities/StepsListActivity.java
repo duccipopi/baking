@@ -1,14 +1,19 @@
 package com.duccipopi.baking.activities;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -48,6 +53,12 @@ public class StepsListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setTitle(mRecipe.getName());
 
+        // Show the Up button in the action bar.
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
         setTitle(mRecipe.getName());
 
         if (findViewById(R.id.step_container) != null) {
@@ -62,6 +73,20 @@ public class StepsListActivity extends AppCompatActivity {
         View recyclerView = findViewById(R.id.step_list);
         assert recyclerView != null;
         setupRecyclerView((RecyclerView) recyclerView);
+
+        View ingredientView = findViewById(R.id.ingredient_card);
+        ingredientView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    invokeActivityOrFragment(IngredientsFragment.class, IngredientsActivity.class, mTwoPane, mRecipe);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private Recipe getRecipeFromIntent() {
@@ -75,42 +100,31 @@ public class StepsListActivity extends AppCompatActivity {
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
         List<Step> steps = Arrays.asList(mRecipe.getSteps());
-        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(this, steps, mTwoPane));
+        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(steps, mTwoPane));
     }
 
 
-    public static class SimpleItemRecyclerViewAdapter
+    public class SimpleItemRecyclerViewAdapter
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
 
-        private final FragmentActivity mParentActivity;
         private final List<Step> mValues;
         private final boolean mTwoPane;
         private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Step item = (Step) view.getTag();
-                if (mTwoPane) {
-                    Bundle arguments = new Bundle();
-                    arguments.putParcelable(ActivityContract.ARG_ITEM, item);
-                    StepFragment fragment = new StepFragment();
-                    fragment.setArguments(arguments);
-                    mParentActivity.getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.step_container, fragment)
-                            .commit();
-                } else {
-                    Context context = view.getContext();
-                    Intent intent = new Intent(context, StepActivity.class);
-                    intent.putExtra(ActivityContract.ARG_ITEM, item);
-
-                    context.startActivity(intent);
+                try {
+                    invokeActivityOrFragment(StepFragment.class, StepActivity.class, mTwoPane, item);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
                 }
             }
         };
 
-        SimpleItemRecyclerViewAdapter(FragmentActivity parent,
-                                      List<Step> items,
+        SimpleItemRecyclerViewAdapter(List<Step> items,
                                       boolean twoPane) {
-            mParentActivity = parent;
             mValues = items;
             mTwoPane = twoPane;
         }
@@ -145,6 +159,37 @@ public class StepsListActivity extends AppCompatActivity {
                 mIdView = view.findViewById(R.id.id_text);
                 mContentView = view.findViewById(R.id.content);
             }
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    // Choose between Fragment and activity to display info
+    private void invokeActivityOrFragment(Class<? extends Fragment> fragmentClass, Class<? extends Activity> activityClass,
+                                          boolean isTwoPane, Parcelable item)
+            throws IllegalAccessException, InstantiationException {
+
+        if (isTwoPane) {
+            Bundle arguments = new Bundle();
+            arguments.putParcelable(ActivityContract.ARG_ITEM, item);
+            Fragment fragment = fragmentClass.newInstance();
+            fragment.setArguments(arguments);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.step_container, fragment)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, activityClass);
+            intent.putExtra(ActivityContract.ARG_ITEM, item);
+
+            startActivity(intent);
         }
     }
 

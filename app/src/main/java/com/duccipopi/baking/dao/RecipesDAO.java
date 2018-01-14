@@ -1,7 +1,11 @@
 package com.duccipopi.baking.dao;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import com.duccipopi.baking.network.RecipesService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -70,6 +74,5 @@ public class RecipesDAO {
             mCallBack.onFailure(call, t);
         }
     }
-
 
 }

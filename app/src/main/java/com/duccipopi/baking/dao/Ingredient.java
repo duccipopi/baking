@@ -16,7 +16,7 @@ public class Ingredient implements Parcelable {
     @SerializedName("ingredient")
     private String name;
 
-    public Ingredient(int quantity, String measure, String name) {
+    public Ingredient(float quantity, String measure, String name) {
         this.quantity = quantity;
         this.measure = measure;
         this.name = name;
@@ -63,4 +63,5 @@ public class Ingredient implements Parcelable {
         parcel.writeString(measure);
         parcel.writeString(name);
     }
+
 }

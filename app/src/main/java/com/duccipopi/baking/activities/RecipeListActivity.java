@@ -1,5 +1,6 @@
 package com.duccipopi.baking.activities;
 
+import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,11 +10,13 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RemoteViews;
 import android.widget.TextView;
 
 import com.duccipopi.baking.R;
 import com.duccipopi.baking.dao.Recipe;
 import com.duccipopi.baking.dao.RecipesDAO;
+import com.duccipopi.baking.widget.IngredientsListWidgetProvider;
 
 import java.util.List;
 
@@ -28,30 +31,58 @@ public class RecipeListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_recipe_list);
 
 
+        // Widget configuration
+        Intent intent = getIntent();
+        int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
+        if (intent.getAction() == AppWidgetManager.ACTION_APPWIDGET_CONFIGURE) {
+
+            Bundle extras = intent.getExtras();
+            if (extras != null) {
+                mAppWidgetId = extras.getInt(
+                        AppWidgetManager.EXTRA_APPWIDGET_ID,
+                        AppWidgetManager.INVALID_APPWIDGET_ID);
+            }
+        }
+
+        // Recipe list initialization
         View recyclerView = findViewById(R.id.recipe_list);
         assert recyclerView != null;
-        RecipesDAO.listRecipes(new RecipesCallBack((RecyclerView) recyclerView));
+        RecipesDAO.listRecipes(new RecipesCallBack((RecyclerView) recyclerView, mAppWidgetId));
 
     }
 
-    public static class SimpleItemRecyclerViewAdapter
+    public class SimpleItemRecyclerViewAdapter
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
 
         private final List<Recipe> mValues;
+        private final int mWidgetId;
         private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Recipe item = (Recipe) view.getTag();
-                Context context = view.getContext();
-                Intent intent = new Intent(context, StepsListActivity.class);
-                intent.putExtra(ActivityContract.ARG_ITEM, item);
 
-                context.startActivity(intent);
+                Recipe item = (Recipe) view.getTag();
+                // Normal operation
+                if (mWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+                    Context context = view.getContext();
+                    Intent intent = new Intent(context, StepsListActivity.class);
+                    intent.putExtra(ActivityContract.ARG_ITEM, item);
+
+                    context.startActivity(intent);
+                } else { // Widget Configuration
+                    IngredientsListWidgetProvider.updateAppWidget(getApplicationContext(),
+                            AppWidgetManager.getInstance(getApplicationContext()), mWidgetId, item);
+
+                    Intent resultValue = new Intent();
+                    resultValue.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, mWidgetId);
+                    setResult(RESULT_OK, resultValue);
+                    finish();
+                }
             }
         };
 
-        SimpleItemRecyclerViewAdapter(List<Recipe> items) {
+        SimpleItemRecyclerViewAdapter(List<Recipe> items, int widgetId) {
             mValues = items;
+            mWidgetId = widgetId;
         }
 
         @Override
@@ -87,16 +118,18 @@ public class RecipeListActivity extends AppCompatActivity {
     // Call back to bind the data to the view
     private class RecipesCallBack implements retrofit2.Callback<List<Recipe>> {
         private final RecyclerView recyclerView;
+        private final int widgetId;
 
-        public RecipesCallBack(RecyclerView recyclerView) {
+        public RecipesCallBack(RecyclerView recyclerView, int widgetId) {
             this.recyclerView = recyclerView;
+            this.widgetId = widgetId;
         }
 
         @Override
         public void onResponse(Call<List<Recipe>> call, Response<List<Recipe>> response) {
 
             if (response.isSuccessful()) {
-                recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(response.body()));
+                recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(response.body(), widgetId));
             } else
                 showSnackBar(R.string.data_fetch_failed);
         }

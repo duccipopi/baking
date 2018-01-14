@@ -5,9 +5,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.duccipopi.baking.R;
@@ -16,6 +18,7 @@ import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.dash.DashChunkSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
@@ -25,6 +28,8 @@ import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
+import com.google.android.exoplayer2.util.Util;
+import com.squareup.picasso.Picasso;
 
 /**
  * A fragment representing a single Recipe detail screen.
@@ -34,8 +39,13 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
  */
 public class StepFragment extends Fragment {
 
+    private static final String SIS_PLAYER_POSITION = "current_position";
+    private static final String SIS_PLAYER_WINDOW = "current_window";
+
     private Step mStep;
     private SimpleExoPlayer mPlayer;
+    private long mPlaybackPosition;
+    private int mCurrentWindow;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -54,17 +64,47 @@ public class StepFragment extends Fragment {
             // to load content from a content provider.
             mStep = getArguments().getParcelable(ActivityContract.ARG_ITEM);
 
-            Activity activity = this.getActivity();
+            /*Activity activity = this.getActivity();
             CollapsingToolbarLayout appBarLayout = activity.findViewById(R.id.toolbar_layout);
             if (appBarLayout != null) {
                 appBarLayout.setTitle(mStep.getShortDescription());
+            }*/
+        }
+
+        if (savedInstanceState != null) {
+
+            if (savedInstanceState.containsKey(SIS_PLAYER_POSITION)) {
+                mPlaybackPosition = savedInstanceState.getLong(SIS_PLAYER_POSITION);
+            }
+
+            if (savedInstanceState.containsKey(SIS_PLAYER_WINDOW)) {
+                mCurrentWindow = savedInstanceState.getInt(SIS_PLAYER_WINDOW);
             }
         }
 
-        // Create the player
-        mPlayer = ExoPlayerFactory.newSimpleInstance(
-                        new DefaultRenderersFactory(getContext()),
-                        new DefaultTrackSelector(), new DefaultLoadControl());
+        initializePlayer();
+
+
+    }
+
+    private void initializePlayer() {
+        if (mPlayer == null) {
+            // Create the player
+            mPlayer = ExoPlayerFactory.newSimpleInstance(getContext(), new DefaultTrackSelector());
+
+            mPlayer.seekTo(mCurrentWindow, mPlaybackPosition);
+            mPlayer.setPlayWhenReady(mPlaybackPosition > 0);
+
+            mPlayer.prepare(buildMediaSource(Uri.parse(mStep.getVideoURL())), true, false);
+        }
+    }
+
+    private void releasePlayer() {
+        if (mPlayer != null) {
+            mPlayer.stop();
+            mPlayer.release();
+            mPlayer = null;
+        }
     }
 
     @Override
@@ -78,27 +118,47 @@ public class StepFragment extends Fragment {
             ((TextView) rootView.findViewById(R.id.step_detail)).setText(mStep.getDescription());
 
             //Prepare player
-            ((SimpleExoPlayerView) rootView.findViewById(R.id.player)).setPlayer(mPlayer);
-            mPlayer.prepare(buildMediaSource(Uri.parse(mStep.getVideoURL())), true, false);
+            SimpleExoPlayerView playerView = rootView.findViewById(R.id.player);
+            ImageView imageView = rootView.findViewById(R.id.thumbnail);
+            if (!mStep.getVideoURL().isEmpty()) {
+                playerView.setPlayer(mPlayer);
+                playerView.setVisibility(View.VISIBLE);
+            }
+            if (!mStep.getThumbnailURL().isEmpty()) {
+                imageView.setVisibility(View.VISIBLE);
+                Picasso.with(getContext())
+                        .load(Uri.parse(mStep.getThumbnailURL()))
+                        .into(imageView);
+            }
 
+            if (playerView.getVisibility() == View.VISIBLE
+                    || imageView.getVisibility() == View.VISIBLE) {
+                rootView.findViewById(R.id.media_frame).setVisibility(View.VISIBLE);
+            }
         }
 
         return rootView;
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mPlayer.release();
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putLong(SIS_PLAYER_POSITION, mPlayer.getCurrentPosition());
+        outState.putInt(SIS_PLAYER_WINDOW, mPlayer.getCurrentWindowIndex());
+        super.onSaveInstanceState(outState);
     }
 
     private MediaSource buildMediaSource(Uri uri) {
-        String ua = "ua"; //Util.getUserAgent(getContext(), getContext().getApplicationInfo().name);
+        String ua = Util.getUserAgent(getContext(), getContext().getApplicationInfo().name);
 
-        DataSource.Factory manifestDataSourceFactory = new DefaultHttpDataSourceFactory(ua);
-        DashChunkSource.Factory dashChunkSourceFactory = new DefaultDashChunkSource.Factory(
-                new DefaultHttpDataSourceFactory(ua, new DefaultBandwidthMeter()));
-        return new DashMediaSource.Factory(dashChunkSourceFactory, manifestDataSourceFactory)
-                .createMediaSource(uri);
+        return new ExtractorMediaSource.Factory(
+                new DefaultHttpDataSourceFactory(ua)).
+                createMediaSource(uri);
     }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        releasePlayer();
+    }
+
 }
