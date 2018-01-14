@@ -13,7 +13,7 @@ public class Recipe implements Parcelable {
     private Ingredient[] ingredients;
     private Step[] steps;
 
-    Recipe(int id, String name, Ingredient[] ingredients, Step[] steps) {
+    public Recipe(int id, String name, Ingredient[] ingredients, Step[] steps) {
         this.id = id;
         this.name = name;
         this.ingredients = ingredients;

@@ -4,7 +4,10 @@ import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.Snackbar;
+import android.support.test.espresso.IdlingResource;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -16,6 +19,7 @@ import android.widget.TextView;
 import com.duccipopi.baking.R;
 import com.duccipopi.baking.dao.Recipe;
 import com.duccipopi.baking.dao.RecipesDAO;
+import com.duccipopi.baking.test.SimpleIdlingResource;
 import com.duccipopi.baking.widget.IngredientsListWidgetProvider;
 
 import java.util.List;
@@ -25,16 +29,17 @@ import retrofit2.Response;
 
 public class RecipeListActivity extends AppCompatActivity {
 
+    private SimpleIdlingResource mIdlinglResource;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_list);
 
-
         // Widget configuration
         Intent intent = getIntent();
         int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
-        if (intent.getAction() == AppWidgetManager.ACTION_APPWIDGET_CONFIGURE) {
+        if (AppWidgetManager.ACTION_APPWIDGET_CONFIGURE.equals(intent.getAction())) {
 
             Bundle extras = intent.getExtras();
             if (extras != null) {
@@ -132,16 +137,36 @@ public class RecipeListActivity extends AppCompatActivity {
                 recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(response.body(), widgetId));
             } else
                 showSnackBar(R.string.data_fetch_failed);
+
+            // For test
+            if (mIdlinglResource != null) {
+                mIdlinglResource.setIdleState(true);
+            }
         }
 
         @Override
         public void onFailure(Call<List<Recipe>> call, Throwable t) {
             showSnackBar(R.string.data_fetch_failed);
+
+            // For test
+            if (mIdlinglResource != null) {
+                mIdlinglResource.setIdleState(true);
+            }
         }
 
         private void showSnackBar(int resId) {
             Snackbar.make(recyclerView, getString(resId),
                     Snackbar.LENGTH_LONG).show();
         }
+    }
+
+
+    @VisibleForTesting
+    @NonNull
+    public IdlingResource getIdlingResource() {
+        if (mIdlinglResource == null) {
+            mIdlinglResource = new SimpleIdlingResource();
+        }
+        return mIdlinglResource;
     }
 }
