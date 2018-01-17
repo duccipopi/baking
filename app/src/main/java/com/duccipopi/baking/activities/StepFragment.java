@@ -18,6 +18,7 @@ import com.duccipopi.baking.dao.Step;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -42,12 +43,14 @@ public class StepFragment extends Fragment {
 
     private static final String SIS_PLAYER_POSITION = "current_position";
     private static final String SIS_PLAYER_WINDOW = "current_window";
+    private static final String SIS_PLAYER_PLAYING = "is_playing";
 
     private Step mStep;
     private SimpleExoPlayer mPlayer;
     private SimpleExoPlayerView mPlayerView;
     private long mPlaybackPosition;
     private int mCurrentWindow;
+    private boolean mIsPlaying;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -82,6 +85,10 @@ public class StepFragment extends Fragment {
             if (savedInstanceState.containsKey(SIS_PLAYER_WINDOW)) {
                 mCurrentWindow = savedInstanceState.getInt(SIS_PLAYER_WINDOW);
             }
+
+            if (savedInstanceState.containsKey(SIS_PLAYER_PLAYING)) {
+                mIsPlaying = savedInstanceState.getBoolean(SIS_PLAYER_PLAYING);
+            }
         }
 
     }
@@ -92,7 +99,7 @@ public class StepFragment extends Fragment {
             mPlayer = ExoPlayerFactory.newSimpleInstance(getContext(), new DefaultTrackSelector());
 
             mPlayer.seekTo(mCurrentWindow, mPlaybackPosition);
-            mPlayer.setPlayWhenReady(mPlaybackPosition > 0);
+            mPlayer.setPlayWhenReady(mIsPlaying);
 
             mPlayer.prepare(buildMediaSource(Uri.parse(mStep.getVideoURL())), mPlaybackPosition > 0, false);
 
@@ -105,6 +112,7 @@ public class StepFragment extends Fragment {
         if (mPlayer != null) {
             mPlaybackPosition = mPlayer.getCurrentPosition();
             mCurrentWindow = mPlayer.getCurrentWindowIndex();
+            mIsPlaying = mPlayer.getPlayWhenReady();
             mPlayer.release();
             mPlayer = null;
         }
@@ -123,7 +131,7 @@ public class StepFragment extends Fragment {
             //Prepare player
             SimpleExoPlayerView playerView = rootView.findViewById(R.id.player);
             ImageView imageView = rootView.findViewById(R.id.thumbnail);
-            if (!mStep.getVideoURL().isEmpty()) {
+            if (!TextUtils.isEmpty(mStep.getVideoURL())) {
                 mPlayerView = playerView;
                 playerView.setVisibility(View.VISIBLE);
                 initializePlayer();
@@ -149,6 +157,7 @@ public class StepFragment extends Fragment {
         if (mPlayer != null) {
             outState.putLong(SIS_PLAYER_POSITION, mPlayer.getCurrentPosition());
             outState.putInt(SIS_PLAYER_WINDOW, mPlayer.getCurrentWindowIndex());
+            outState.putBoolean(SIS_PLAYER_PLAYING, mPlayer.getPlayWhenReady());
         }
         super.onSaveInstanceState(outState);
     }
