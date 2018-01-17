@@ -14,7 +14,7 @@ public class Util {
 
     public static Recipe getRecipe() {
         if (sRecipe == null) {
-            sRecipe = new Recipe(1, "Testing recipe", getIngredients(NRO_INGREDIENTS), getSteps(NRO_STEPS));
+            sRecipe = new Recipe(1, "Testing recipe", getIngredients(NRO_INGREDIENTS), getSteps(NRO_STEPS), "");
         }
 
         return sRecipe;

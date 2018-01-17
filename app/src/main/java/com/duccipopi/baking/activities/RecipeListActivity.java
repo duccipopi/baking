@@ -10,9 +10,11 @@ import android.support.design.widget.Snackbar;
 import android.support.test.espresso.IdlingResource;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 
@@ -21,6 +23,7 @@ import com.duccipopi.baking.dao.Recipe;
 import com.duccipopi.baking.dao.RecipesDAO;
 import com.duccipopi.baking.test.SimpleIdlingResource;
 import com.duccipopi.baking.widget.IngredientsListWidgetProvider;
+import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
@@ -101,6 +104,14 @@ public class RecipeListActivity extends AppCompatActivity {
         public void onBindViewHolder(final SimpleItemRecyclerViewAdapter.ViewHolder holder, int position) {
             holder.mContentView.setText(mValues.get(position).getName());
 
+            if (!TextUtils.isEmpty(mValues.get(position).getImage())) {
+                Picasso.with(holder.mImageContentView.getContext())
+                        .load(mValues.get(position).getImage())
+                        .placeholder(R.drawable.ic_loading)
+                        .error(R.drawable.ic_error)
+                        .into(holder.mImageContentView);
+            }
+
             holder.itemView.setTag(mValues.get(position));
             holder.itemView.setOnClickListener(mOnClickListener);
         }
@@ -112,10 +123,12 @@ public class RecipeListActivity extends AppCompatActivity {
 
         class ViewHolder extends RecyclerView.ViewHolder {
             final TextView mContentView;
+            final ImageView mImageContentView;
 
             ViewHolder(View view) {
                 super(view);
                 mContentView = view.findViewById(R.id.content);
+                mImageContentView = view.findViewById(R.id.image_content);
             }
         }
     }

@@ -18,24 +18,30 @@ android {
     }
 }
 
+ext {
+    supportLibVersion = '26.1.0'
+    espressoLibVersion = '3.0.1'
+    squareupLibVersion = '2.3.0'
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support:support-v4:26.1.0'
-    implementation 'com.android.support:recyclerview-v7:26.1.0'
-    implementation 'com.android.support:cardview-v7:26.1.0'
-    implementation 'com.android.support:design:26.1.0'
+    implementation ("com.android.support:appcompat-v7:${supportLibVersion}")
+    implementation ("com.android.support:support-v4:${supportLibVersion}")
+    implementation ("com.android.support:recyclerview-v7:${supportLibVersion}")
+    implementation ("com.android.support:cardview-v7:${supportLibVersion}")
+    implementation ("com.android.support:design:${supportLibVersion}")
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-contrib:3.0.1'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-intents:3.0.1'
-    compile 'com.android.support.test.espresso:espresso-idling-resource:3.0.1'
+    androidTestImplementation ("com.android.support.test.espresso:espresso-core:${espressoLibVersion}")
+    androidTestImplementation ("com.android.support.test.espresso:espresso-contrib:${espressoLibVersion}")
+    androidTestImplementation ("com.android.support.test.espresso:espresso-intents:${espressoLibVersion}")
+    compile ("com.android.support.test.espresso:espresso-idling-resource:${espressoLibVersion}")
 
-    compile 'com.squareup.retrofit2:retrofit:2.3.0'
+    compile ("com.squareup.retrofit2:retrofit:${squareupLibVersion}")
+    compile ("com.squareup.retrofit2:converter-gson:${squareupLibVersion}")
     compile 'com.google.code.gson:gson:2.8.2'
-    compile 'com.squareup.retrofit2:converter-gson:2.3.0'
     compile 'com.google.android.exoplayer:exoplayer:2.6.1'
     compile 'com.squareup.picasso:picasso:2.5.2'
 }

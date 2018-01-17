@@ -12,12 +12,14 @@ public class Recipe implements Parcelable {
     private String name;
     private Ingredient[] ingredients;
     private Step[] steps;
+    private String image;
 
-    public Recipe(int id, String name, Ingredient[] ingredients, Step[] steps) {
+    public Recipe(int id, String name, Ingredient[] ingredients, Step[] steps, String image) {
         this.id = id;
         this.name = name;
         this.ingredients = ingredients;
         this.steps = steps;
+        this.image = image;
     }
 
     protected Recipe(Parcel in) {
@@ -25,6 +27,7 @@ public class Recipe implements Parcelable {
         name = in.readString();
         ingredients = in.createTypedArray(Ingredient.CREATOR);
         steps = in.createTypedArray(Step.CREATOR);
+        image = in.readString();
     }
 
     public static final Creator<Recipe> CREATOR = new Creator<Recipe>() {
@@ -55,6 +58,10 @@ public class Recipe implements Parcelable {
         return steps;
     }
 
+    public String getImage() {
+        return image;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -66,5 +73,6 @@ public class Recipe implements Parcelable {
         parcel.writeString(name);
         parcel.writeTypedArray(ingredients, i);
         parcel.writeTypedArray(steps, i);
+        parcel.writeString(image);
     }
 }

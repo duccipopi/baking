@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -44,6 +45,7 @@ public class StepFragment extends Fragment {
 
     private Step mStep;
     private SimpleExoPlayer mPlayer;
+    private SimpleExoPlayerView mPlayerView;
     private long mPlaybackPosition;
     private int mCurrentWindow;
 
@@ -82,26 +84,27 @@ public class StepFragment extends Fragment {
             }
         }
 
-        initializePlayer();
-
-
     }
 
     private void initializePlayer() {
-        if (mPlayer == null) {
+        if (mPlayer == null && mPlayerView != null) {
             // Create the player
             mPlayer = ExoPlayerFactory.newSimpleInstance(getContext(), new DefaultTrackSelector());
 
             mPlayer.seekTo(mCurrentWindow, mPlaybackPosition);
             mPlayer.setPlayWhenReady(mPlaybackPosition > 0);
 
-            mPlayer.prepare(buildMediaSource(Uri.parse(mStep.getVideoURL())), true, false);
+            mPlayer.prepare(buildMediaSource(Uri.parse(mStep.getVideoURL())), mPlaybackPosition > 0, false);
+
+            mPlayerView.setPlayer(mPlayer);
+
         }
     }
 
     private void releasePlayer() {
         if (mPlayer != null) {
-            mPlayer.stop();
+            mPlaybackPosition = mPlayer.getCurrentPosition();
+            mCurrentWindow = mPlayer.getCurrentWindowIndex();
             mPlayer.release();
             mPlayer = null;
         }
@@ -121,10 +124,11 @@ public class StepFragment extends Fragment {
             SimpleExoPlayerView playerView = rootView.findViewById(R.id.player);
             ImageView imageView = rootView.findViewById(R.id.thumbnail);
             if (!mStep.getVideoURL().isEmpty()) {
-                playerView.setPlayer(mPlayer);
+                mPlayerView = playerView;
                 playerView.setVisibility(View.VISIBLE);
+                initializePlayer();
             }
-            if (!mStep.getThumbnailURL().isEmpty()) {
+            if (!TextUtils.isEmpty(mStep.getThumbnailURL())) {
                 imageView.setVisibility(View.VISIBLE);
                 Picasso.with(getContext())
                         .load(Uri.parse(mStep.getThumbnailURL()))
@@ -142,8 +146,10 @@ public class StepFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        outState.putLong(SIS_PLAYER_POSITION, mPlayer.getCurrentPosition());
-        outState.putInt(SIS_PLAYER_WINDOW, mPlayer.getCurrentWindowIndex());
+        if (mPlayer != null) {
+            outState.putLong(SIS_PLAYER_POSITION, mPlayer.getCurrentPosition());
+            outState.putInt(SIS_PLAYER_WINDOW, mPlayer.getCurrentWindowIndex());
+        }
         super.onSaveInstanceState(outState);
     }
 
@@ -153,6 +159,38 @@ public class StepFragment extends Fragment {
         return new ExtractorMediaSource.Factory(
                 new DefaultHttpDataSourceFactory(ua)).
                 createMediaSource(uri);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (Util.SDK_INT > 23) {
+            initializePlayer();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (Util.SDK_INT <= 23 || mPlayer == null) {
+            initializePlayer();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (Util.SDK_INT <= 23) {
+            releasePlayer();
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (Util.SDK_INT > 23) {
+            releasePlayer();
+        }
     }
 
     @Override
